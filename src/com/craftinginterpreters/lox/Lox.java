@@ -10,7 +10,9 @@ import java.util.List;
 
 
 public class Lox {
+  private static final Interpreter interpreter = new Interpreter();
   static boolean hadError = false; // 编译时判断是否出现了错误
+  static boolean hadRuntimeError = false; // 检测运行时异常
   public static void main(String[] args) throws IOException {
     if (args.length > 1) {
       System.out.println("Usage: jlox [script]");
@@ -31,7 +33,8 @@ public class Lox {
     byte[] bytes = Files.readAllBytes(Paths.get(path));
     run(new String(bytes, Charset.defaultCharset()));
     // Indicate an error in the exit code.
-    if (hadError) System.exit(65); // 若出现错误则退出程序 TODO:上面的run方法不是已经执行了吗
+    if (hadError) System.exit(65); // 若出现错误则退出程序
+    if (hadRuntimeError) System.exit(70);
   }
 
   /**
@@ -59,10 +62,17 @@ public class Lox {
     Scanner scanner=new Scanner(source);
     List<Token> tokens = scanner.scanTokens(); // 从源代码中解析出所有token
 
-    // For now, just print the tokens.
-    for (Token token : tokens) {
-      System.out.println(token);
-    }
+//    // For now, just print the tokens.
+//    for (Token token : tokens) {
+//      System.out.println(token);
+//    }
+    Parser parser = new Parser(tokens);
+    Expr expression = parser.parse();
+
+    // Stop if there was a syntax error.
+    if (hadError) return;
+
+    interpreter.interpret(expression);
   }
 
   static void error(int line, String message) {
@@ -73,5 +83,17 @@ public class Lox {
     System.err.println(
             "[line " + line + "] Error" + where + ": " + message);
     hadError = true;
+  }
+  static void error(Token token, String message) {
+    if (token.type == TokenType.EOF) {
+      report(token.line, " at end", message);
+    } else {
+      report(token.line, " at '" + token.lexeme + "'", message);
+    }
+  }
+  static void runtimeError(RuntimeError error) {
+    System.err.println(error.getMessage() +
+            "\n[line " + error.token.line + "]");
+    hadRuntimeError = true;
   }
 }

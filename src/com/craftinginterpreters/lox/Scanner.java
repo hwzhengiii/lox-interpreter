@@ -88,7 +88,7 @@ class Scanner {
       case '/': // 可能为更长的token，此处可能为注释或除法
         if (match('/')) {
           // A comment goes until the end of the line.
-          while (peek() != '\n' && !isAtEnd()) advance(); // 使用while循环消耗注释内容
+          while (peek() != '\n' && !isAtEnd()) advance(); // 使用while循环消耗注释内容，单行注释
         } else {
           addToken(SLASH);
         }
